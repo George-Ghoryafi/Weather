@@ -8,22 +8,30 @@ const { width } = Dimensions.get('window');
 const componentWidth = width * 0.85;
 const componentHeight = width * 0.2;
 
-const DetailsComponent: React.FC = () => {
+type detailsProps = {
+    precipitation: number;
+    humidity: number;
+    windSpeed: number;
+}
+
+const DetailsComponent: React.FC<detailsProps> = ({
+    precipitation, humidity, windSpeed
+}) => {
     return (
         <View style={[styles.container, { width: componentWidth, height: componentHeight }]}>
             <View style={styles.div}>
                 <Feather name="umbrella" size={28} color="#99A0FA" />
-                <Text style={styles.detailsText}>0%</Text>
+                <Text style={styles.detailsText}>{precipitation}%</Text>
                 <Text style={styles.detailsText}>Precipitation</Text>
             </View>
             <View style={styles.div}>
                 <Feather name="droplet" size={28} color="#99A0FA" />
-                <Text style={styles.detailsText}>20%</Text>
+                <Text style={styles.detailsText}>{humidity}%</Text>
                 <Text style={styles.detailsText}>Humidity</Text>
             </View>
             <View style={styles.div}>
                 <MaterialCommunityIcons name="weather-windy" size={28} color="#99A0FA" />
-                <Text style={styles.detailsText}>12 km/h</Text>
+                <Text style={styles.detailsText}>{windSpeed} km/h</Text>
                 <Text style={styles.detailsText}>Wind Speed</Text>
             </View>
         </View>

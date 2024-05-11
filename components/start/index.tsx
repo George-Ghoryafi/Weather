@@ -1,45 +1,40 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, Pressable, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import * as Location from 'expo-location';
 import moment from 'moment';
 import Details from './details';
-
-type Weather = {
-    timezone: string;
-    current: {
-        temp: number;
-        dt: number;
-        weather :[
-            {
-               id : number,
-               main : string,
-               description :string,
-               icon : string
-            }
-         ]
-    }
-
-}
+import WeatherBubble from './weatherBubble';
+import { Weather, Forecast } from './Types';
 
 
 const StartScreen = () => {
 
+    const numbers = Array.from({ length: 40 }, (_, i) => i); // Create an array from 0 to 40
     const [weather, setWeather] = useState<Weather>();
+    const [fiveDay, setFiveDay] = useState<Forecast>();
     const [location, setLocation] = useState(' ');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [time, setTime] = useState(moment(currentDate).format('MMMM Do YYYY, h:mm a'));
+    const date = moment(currentDate).format('MMMM Do YYYY, h:mm a');
+    const [time, setTime] = useState(date);
 
     const apiCall = `https://api.openweathermap.org/data/3.0/onecall?lat=43.5288426&lon=-79.7121996&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
+
+    const fiveDayForecast = `https://api.openweathermap.org/data/2.5/forecast?lat=43.5288426&lon=-79.7121996&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
 
     const getWeather = async () => {
         const response = await fetch(apiCall);
         const data = await response.json();
         setWeather(data);
+        //this prints out the day of the week as an integer Sunday 0 - Saturday 6
+        //console.log(moment(currentDate).add(0, 'days').day()); 
     }
 
-    useEffect(() => {
-        getWeather();
-    }, []);
+    const getFiveDayForecast = async () => {
+        const response = await fetch(fiveDayForecast);
+        const data = await response.json();
+        setFiveDay(data);
+        console.log(data);
+    }
 
     useEffect(() => {
         const getLocationAsync = async () => {
@@ -56,21 +51,26 @@ const StartScreen = () => {
                 setLocation(address[0].city);
             }
             //setting the initial value
-
-            let interval = setInterval(() => {
-                setCurrentDate(new Date());
-                setTime(moment(currentDate).format('MMMM Do YYYY, h:mm a'));
-              }, 1000);
-
-            return () => clearInterval(interval);
         
-        } catch (error) {
-            console.error('Error getting location:', error);
-          }
-        };
-    
+            } catch (error) {
+                console.error('Error getting location:', error);
+              }
+            };
+      
         getLocationAsync();
-      }, []);
+        getWeather();
+        getFiveDayForecast();
+    }, []);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+          setCurrentDate(new Date());
+          setTime(moment(currentDate).format('MMMM Do YYYY, h:mm a'));
+        }, 60000);
+
+        return () => clearInterval(interval);
+    }, []);
+
 
     if (!weather) {
         return (
@@ -80,10 +80,18 @@ const StartScreen = () => {
         )
     }
 
+    const handleMore = () => {
+        
+    }
+
+    const handleplus = () => {
+        
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.headerContainer}>
-                <Pressable onPress={() => {console.log("more info")}}>
+                <Pressable onPress={() => handleMore()}>
                     <Image style={styles.moreInfo} source={require('./more.png')} />
                 </Pressable>
                 <View style={styles.centerTopContainer}>
@@ -96,24 +104,47 @@ const StartScreen = () => {
                     
                 </View>
 
-                <Pressable onPress={() => {console.log('pressed')}}>
+                <Pressable onPress={() => handleplus()}>
                     <Image style={styles.moreLocations} source={require('./plus-circle.png')}/>
                 </Pressable>
             </View>
             
             <ScrollView style={styles.weatherContentContainer}>
                 <View style={styles.weatherOverview}>
-                    <View style={styles.weatherOverview}>
-                        <View style={styles.tempAndSky}>
-                            <Text style={styles.currentWeather}>{Math.floor(weather.current.temp)}</Text>
-                            <Text style={styles.currentSky}>{weather.current.weather[0].main}</Text>
+                    <View style={styles.currentWeatherCentral}>
+                        <View style={styles.weatherOverview}>
+                            <View style={styles.tempAndSky}>
+                                <Text style={styles.currentWeather}>{Math.floor(weather.current.temp)}</Text>
+                            </View>
+                            <Text style={styles.degree}>°</Text> 
                         </View>
-                        <Text style={styles.degree}>°</Text> 
+                        <Text style={styles.currentSky}>{weather.current.weather[0].main}</Text>
+                        
                     </View> 
 
                 </View>
                 <View style={styles.detailedOval}>
-                    <Details></Details>
+                    <Details precipitation={(weather.hourly[0].pop)*100} humidity={weather.current.humidity} windSpeed={Math.floor((weather.current.wind_speed) * 3.6)}></Details>
+                </View>
+
+                <View>
+                    <Text style={styles.forecastTitle}>5-Day Forecast</Text>
+                    <View style={styles.fiveDays}>
+                        {
+                        numbers.map((number) => (
+                            <React.Fragment key={number}>
+                                {number % 8 === 0 &&
+                                    <WeatherBubble
+                                        time={ fiveDay ? moment.unix(fiveDay?.list[number].dt).day() : 0}
+                                        weatherIcon={fiveDay ? fiveDay?.list[number].weather[0].main : ' '}
+                                        temperature={fiveDay ? fiveDay?.list[number].main.temp : 0}
+                                    />
+                                }
+                            </React.Fragment>
+                        ))
+                            
+                        }
+                    </View>
                 </View>
             </ScrollView>
 
@@ -181,7 +212,6 @@ const styles = StyleSheet.create({
     currentSky: {
         fontSize: 24,
         color: '#99A0FA',
-        marginLeft: 20,
     },
     degree: {
         fontSize: 100,
@@ -197,8 +227,25 @@ const styles = StyleSheet.create({
         padding: 10,
         flexDirection: 'row',
         justifyContent: 'center',
+        marginBottom: 40,
         
     },
+    forecastTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#5C6EE5',
+        marginTop: 20,
+        marginLeft: 20,
+        marginBottom: 50,
+    },
+    fiveDays: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    currentWeatherCentral: {
+        flexDirection: 'column',
+        alignItems: 'center',
+    }
 });
 
 export default StartScreen;
