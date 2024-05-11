@@ -16,10 +16,12 @@ const StartScreen = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const date = moment(currentDate).format('MMMM Do YYYY, h:mm a');
     const [time, setTime] = useState(date);
+    const [longitude, setLongitude] = useState(0);
+    const [latitude, setLatitude] = useState(0);
 
-    const apiCall = `https://api.openweathermap.org/data/3.0/onecall?lat=43.5288426&lon=-79.7121996&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
+    const apiCall = `https://api.openweathermap.org/data/3.0/onecall?lat=${latitude}&lon=${longitude}&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
 
-    const fiveDayForecast = `https://api.openweathermap.org/data/2.5/forecast?lat=43.5288426&lon=-79.7121996&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
+    const fiveDayForecast = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=e3583e9337a2eaf5236a2a072f79bbff`
 
     const getWeather = async () => {
         const response = await fetch(apiCall);
@@ -33,7 +35,6 @@ const StartScreen = () => {
         const response = await fetch(fiveDayForecast);
         const data = await response.json();
         setFiveDay(data);
-        console.log(data);
     }
 
     useEffect(() => {
@@ -44,12 +45,16 @@ const StartScreen = () => {
               console.log('Location permission denied');
               return;
             }
-    
             let location = await Location.getCurrentPositionAsync({});
             const address = await Location.reverseGeocodeAsync(location.coords);
             if(address[0].city != null){
                 setLocation(address[0].city);
             }
+            
+            const { longitude, latitude} = location.coords;
+            setLatitude(latitude); //setting the initial value
+            setLongitude(longitude);
+
             //setting the initial value
         
             } catch (error) {
@@ -124,7 +129,7 @@ const StartScreen = () => {
 
                 </View>
                 <View style={styles.detailedOval}>
-                    <Details precipitation={(weather.hourly[0].pop)*100} humidity={weather.current.humidity} windSpeed={Math.floor((weather.current.wind_speed) * 3.6)}></Details>
+                    <Details precipitation={(weather.daily[0].pop)*100} humidity={weather.current.humidity} windSpeed={Math.floor((weather.current.wind_speed) * 3.6)}></Details>
                 </View>
 
                 <View>

@@ -1015,7 +1015,7 @@ type Weather = {
             }
          ]
     }
-    hourly: [
+    daily: [
         {
             pop: number;
         }
